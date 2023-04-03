@@ -23,6 +23,7 @@ def load_one_data(path):
 
 def svd_compress(data, k):
     u, s, v = np.linalg.svd(data)
+    # print("k = " + str(k) + ":", u.shape, s.shape, v.shape)
     u_k = u[:, :k]
     s_k = np.diag(s[:k])
     v_k = v[:k, :]
