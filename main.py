@@ -9,6 +9,8 @@ import os
 import matplotlib.pyplot as plt
 import cv2
 
+path = './val_data'
+
 
 def load_one_data(path):
     if not os.path.exists(path):
@@ -36,36 +38,54 @@ def SVD_3C(data, k):
     data_g_k = svd_compress(data_g, k)
     data_b_k = svd_compress(data_b, k)
     data_k = np.dstack((data_r_k, data_g_k, data_b_k))
-    return data_k
+    data_k = np.clip(data_k, 0, 255)  # 像素值限制在0-255之间
+    return data_k.astype(np.uint8)
 
 
 def save_image(image_data, path):
     cv2.imwrite(path, image_data)
 
 
-if __name__ == '__main__':
-    input_path = input("请输入图片路径：")
-    if not os.path.exists(input_path):
-        input_path = 'D:\Data\simple_img\img_1.png'
-    k = int(input("请输入压缩维度："))
-    if k < 1:
-        k = 1
-    output_path = input("请输入保存路径（包含文件名和扩展名）：")
-    if not os.path.exists(output_path):
-        # 取出input_path的path和文件名
-        path = os.path.split(input_path)[0]
-        file_name = os.path.split(input_path)[1]
-        # 取出文件名和扩展名
-        file_name = os.path.splitext(file_name)[0]
-        file_ext = os.path.splitext(input_path)[1]
-        output_path = path + '\\' + file_name + '_k_' + str(k) + file_ext
+def show_imgs(imgs, titles, nl=1, sub_title=None):
+    n = len(imgs)
+    plt.figure()
+    for i in range(n):
+        plt.subplot(nl, int((n + 1) / nl), i + 1)
+        plt.imshow(imgs[i])
+        plt.axis('off')  # 不显示坐标轴
+        plt.title(titles[i])
+    if sub_title is not None:
+        plt.suptitle(sub_title)
+    plt.show()
 
-    data = load_one_data(input_path)
-    if data is not None:
-        data_k = SVD_3C(data, k)
-        plt.imshow(data_k / 255)
-        plt.show()
-        save_image(data_k, output_path)
-        print(f"压缩后的图片已保存在：{output_path}")
-    else:
-        print("图片加载失败，请检查路径")
+
+# 展示程序
+def show_image(path):
+    # 读取图片
+    name_lst = os.listdir(path)
+    imgs = []
+    for name in name_lst:
+        imgs.append(load_one_data(path + '/' + name))
+
+    # 在一个窗口中显示多张图片
+    show_imgs(imgs, name_lst, 2, 'original')
+
+    # SVD压缩
+    k_l = [1, 10, 100]
+    for k in k_l:
+        print("k = " + str(k) + "压缩开始")
+        imgs_k = []
+        i = 0
+        for img in imgs:
+            i += 1
+            imgs_k.append(SVD_3C(img, k))
+            print("k = " + str(k) + ",", i, "压缩完成")
+        show_imgs(imgs_k, name_lst, 2, 'k = ' + str(k))
+        print("k = " + str(k) + "展示完成")
+
+    print("展示程序结束")
+
+
+if __name__ == '__main__':
+    show_image(path)
+    # input("按任意键退出")
